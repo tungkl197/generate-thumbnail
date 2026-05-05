@@ -1,9 +1,10 @@
 import os
 import base64
 import mimetypes
+import uuid
 import httpx
 from fastapi import FastAPI, Form
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import JSONResponse
 from jinja2 import Environment, FileSystemLoader
 
 from text_parser import parse_colored_text
@@ -51,15 +52,20 @@ async def generate_thumbnail(
         ...,
         description='Text with color tags, e.g.: Tôi đòi <green>nghỉ việc</green>, sếp tổng liền <red>phát điên</red> rồi',
     ),
+    upload_url: str = Form(..., description="Upload API base URL (e.g. https://your-domain)"),
+    api_key: str = Form(..., description="API key for upload authentication"),
 ):
     """
-    Generate a thumbnail PNG image.
+    Generate a thumbnail PNG image and upload it to an external service.
 
     - **r2_url**: Public URL to the girl image (R2, S3, or any HTTP URL)
     - **text**: Text with color tags like <green>...</green>, <red>...</red>
+    - **upload_url**: Base URL of the upload API (e.g. https://your-domain)
+    - **api_key**: API key for the upload service Authorization header
 
-    Returns: PNG image file (1920×1080)
+    Returns: JSON response from the upload API
     """
+    output_path = None
     try:
         # 1. Download girl image from R2 URL → base64 data URI
         async with httpx.AsyncClient(timeout=30.0) as client:
@@ -84,14 +90,35 @@ async def generate_thumbnail(
         # 4. Screenshot with Playwright → PNG
         output_path = await render_thumbnail(html_content)
 
-        # 5. Return PNG file
-        return FileResponse(
-            path=output_path,
-            media_type="image/png",
-            filename="thumbnail.png",
+        # 5. Upload thumbnail to external API
+        upload_url_endpoint = f"{upload_url.rstrip('/')}/api/public/v1/upload"
+        async with httpx.AsyncClient(timeout=60.0) as upload_client:
+            with open(output_path, "rb") as f:
+                files = {"file": (f"{uuid.uuid4()}.png", f, "image/png")}
+                headers = {"Authorization": api_key}
+                upload_response = await upload_client.post(
+                    upload_url_endpoint,
+                    headers=headers,
+                    files=files,
+                )
+                upload_response.raise_for_status()
+
+        # 6. Return upload API response
+        return JSONResponse(
+            status_code=upload_response.status_code,
+            content=upload_response.json(),
         )
 
     except httpx.HTTPStatusError as e:
+        request_url = str(e.request.url)
+        if "/api/public/v1/upload" in request_url:
+            return JSONResponse(
+                status_code=502,
+                content={
+                    "error": f"Upload API returned error: {e.response.status_code}",
+                    "detail": e.response.text,
+                },
+            )
         return JSONResponse(
             status_code=400,
             content={"error": f"Failed to download image from R2: {e.response.status_code}"},
@@ -99,19 +126,28 @@ async def generate_thumbnail(
     except httpx.RequestError as e:
         return JSONResponse(
             status_code=400,
-            content={"error": f"Failed to connect to R2 URL: {str(e)}"},
+            content={"error": f"Request failed: {str(e)}"},
         )
     except Exception as e:
         return JSONResponse(
             status_code=500,
             content={"error": str(e)},
         )
+    finally:
+        # Clean up temp file
+        if output_path and os.path.exists(output_path):
+            os.remove(output_path)
 
 
 @app.get("/")
 async def root():
     return {
         "message": "Thumbnail Generator API",
-        "usage": "POST /api/generate-thumbnail with r2_url (string) and text (string)",
-        "text_format": "Use <green>...</green>, <red>...</red> for colored text",
+        "usage": "POST /api/generate-thumbnail with r2_url, text, url, api_key",
+        "params": {
+            "r2_url": "Public URL to the girl image",
+            "text": "Text with color tags like <green>...</green>, <red>...</red>",
+            "url": "Upload API base URL (e.g. https://your-domain)",
+            "api_key": "API key for upload Authorization header",
+        },
     }
