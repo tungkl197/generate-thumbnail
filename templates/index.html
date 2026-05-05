@@ -53,13 +53,19 @@
     }
 
     /* ===== Layer 3: Text (z-index cao nhất) ===== */
-    .text-layer {
+    .text-container {
       position: absolute;
       z-index: 3;
-      left: 140px;
-      bottom: 180px;
-      max-width: 900px;
+      left: 0px;
+      bottom: 0px;
+      width: 1200px;
+      height: 550px;
+    }
+
+    .text-layer {
+      max-width: 990px;
       text-align: center;
+      margin: auto;
     }
 
     .title {
@@ -102,10 +108,12 @@
     <img class="background-image" src="{{ background_image }}" alt="Background" id="background-image">
 
     <!-- Layer 3: Text (z-index cao nhất) -->
-    <div class="text-layer" id="text-layer">
-      <p class="title" id="main-title">
-        {{ text_html | safe }}
-      </p>
+    <div class="text-container">
+      <div class="text-layer" id="text-layer">
+        <p class="title" id="main-title">
+          {{ text_html | safe }}
+        </p>
+      </div>
     </div>
   </div>
 </body>
