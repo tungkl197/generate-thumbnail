@@ -1,6 +1,7 @@
 services:
   thumbnail-api:
     build: .
+    image: thumbnail:latest
     ports:
       - "4526:4526"
     restart: unless-stopped
@@ -8,3 +9,13 @@ services:
       - PYTHONUNBUFFERED=1
     volumes:
       - ./output:/app/output
+    networks:
+      internal_shared:
+        aliases:
+          - thumbnail-api
+      default: {}
+
+networks:
+  internal_shared:
+    external: true
+    name: internal_shared
