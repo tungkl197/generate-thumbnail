@@ -1,0 +1,10 @@
+services:
+  thumbnail-api:
+    build: .
+    ports:
+      - "4526:4526"
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./output:/app/output

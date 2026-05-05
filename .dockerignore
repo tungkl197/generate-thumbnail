@@ -1,0 +1,8 @@
+__pycache__
+*.pyc
+output/*.png
+.git
+.gitignore
+*.md
+girl.jpg
+girl.png
