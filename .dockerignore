@@ -1,8 +1,10 @@
-__pycache__
-*.pyc
-output/*.png
+node_modules
+npm-debug.log
+.env
 .git
 .gitignore
 *.md
-girl.jpg
-girl.png
+output/*.png
+__pycache__
+*.pyc
+*.py

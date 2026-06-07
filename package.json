@@ -1,0 +1,25 @@
+{
+  "name": "generate-thumbnail",
+  "version": "1.1.0",
+  "description": "Generate thumbnail PNG from image URL + styled text using Playwright",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "install:browser": "npx playwright install chromium"
+  },
+  "keywords": ["thumbnail", "playwright", "screenshot", "generator"],
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.7.0",
+    "dotenv": "^16.4.0",
+    "express": "^4.21.0",
+    "express-validator": "^7.2.0",
+    "form-data": "^4.0.0",
+    "multer": "^1.4.5-lts.1",
+    "nunjucks": "^3.2.4",
+    "playwright": "^1.48.0",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
+  }
+}

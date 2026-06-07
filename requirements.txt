@@ -1,6 +1,0 @@
-fastapi
-uvicorn[standard]
-playwright
-python-multipart
-jinja2
-httpx

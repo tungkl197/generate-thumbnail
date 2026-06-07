@@ -1,4 +1,4 @@
-FROM python:3.12-slim
+FROM node:20-slim
 
 # Install Playwright/Chromium system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -17,34 +17,26 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpango-1.0-0 \
     libcairo2 \
     libxshmfence1 \
-    libx11-xcb1 \
-    libxcb1 \
-    libxext6 \
-    libxfixes3 \
-    libxi6 \
-    libxrender1 \
-    libxtst6 \
-    libglib2.0-0 \
     libxkbcommon0 \
     fonts-liberation \
-    wget \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Install Python dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Install Node.js dependencies
+COPY package*.json ./
+RUN npm ci --production
 
 # Install Chromium for Playwright
-RUN playwright install chromium
+RUN npx playwright install chromium
 
 # Copy application code
 COPY . .
 
-# Create output directory
-RUN mkdir -p /app/output
-
 EXPOSE 4526
 
-CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "4526"]
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+    CMD node -e "const http = require('http'); http.get('http://localhost:4526/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1); }).on('error', () => process.exit(1));"
+
+CMD ["node", "src/server.js"]

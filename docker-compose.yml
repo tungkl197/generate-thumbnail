@@ -6,9 +6,9 @@ services:
       - "4526:4526"
     restart: unless-stopped
     environment:
-      - PYTHONUNBUFFERED=1
-    volumes:
-      - ./output:/app/output
+      - NODE_ENV=production
+    env_file:
+      - .env
     networks:
       internal_shared:
         aliases:
